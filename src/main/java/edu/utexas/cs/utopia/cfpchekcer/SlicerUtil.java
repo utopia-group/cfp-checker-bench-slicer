@@ -1,11 +1,15 @@
 package edu.utexas.cs.utopia.cfpchekcer;
 
 import com.ibm.wala.classLoader.CallSiteReference;
+import com.ibm.wala.classLoader.IClass;
+import com.ibm.wala.classLoader.IMethod;
+import com.ibm.wala.classLoader.ShrikeBTMethod;
 import com.ibm.wala.ipa.callgraph.AnalysisScope;
 import com.ibm.wala.ipa.callgraph.CGNode;
 import com.ibm.wala.ipa.callgraph.CallGraph;
 import com.ibm.wala.ipa.slicer.NormalStatement;
 import com.ibm.wala.ipa.slicer.Statement;
+import com.ibm.wala.shrikeCT.InvalidClassFileException;
 import com.ibm.wala.ssa.IR;
 import com.ibm.wala.ssa.SSAAbstractInvokeInstruction;
 import com.ibm.wala.ssa.SSAAbstractThrowInstruction;
@@ -17,6 +21,7 @@ import com.ibm.wala.ssa.SSANewInstruction;
 import com.ibm.wala.ssa.SSAPutInstruction;
 import com.ibm.wala.ssa.SSAReturnInstruction;
 import com.ibm.wala.types.ClassLoaderReference;
+import com.ibm.wala.types.MethodReference;
 import com.ibm.wala.util.collections.Iterator2Iterable;
 import com.ibm.wala.util.debug.Assertions;
 import com.ibm.wala.util.intset.IntSet;
@@ -29,7 +34,6 @@ import java.io.PrintWriter;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Set;
 
 /** utility methods for working with slices and slice {@link Statement}s */
 public class SlicerUtil {
@@ -45,45 +49,46 @@ public class SlicerUtil {
      * @return Statement calling the method
      * @throws com.ibm.wala.util.debug.UnimplementedError if no such statement found
      */
-    public static Statement findCallTo(CGNode n, String methodName) {
+    public static Collection<Statement> findCallTo(CGNode n, String methodName, String className) {
+        Collection<Statement> rv = new HashSet<>();
         IR ir = n.getIR();
-        if (ir == null) return null;
+        if (ir == null) return rv;
 
         for (SSAInstruction s : Iterator2Iterable.make(ir.iterateAllInstructions())) {
             if (s instanceof SSAAbstractInvokeInstruction) {
                 SSAAbstractInvokeInstruction call = (SSAAbstractInvokeInstruction) s;
-                if (call.getCallSite().getDeclaredTarget().getName().toString().equals(methodName)) {
+                MethodReference declaredTarget = call.getCallSite().getDeclaredTarget();
+                if (declaredTarget.getDeclaringClass().getName().toString().equals(className) &&
+                        declaredTarget.getName().toString().equals(methodName)) {
                     IntSet indices = ir.getCallInstructionIndices(call.getCallSite());
                     Assertions.productionAssertion(
                             indices.size() == 1, "expected 1 but got " + indices.size());
-                    return new NormalStatement(n, indices.intIterator().next());
+                    rv.add(new NormalStatement(n, indices.intIterator().next()));
                 }
             }
         }
-        //Assertions.UNREACHABLE("failed to find call to " + methodName + " in " + n);
-        return null;
+
+        return rv;
     }
 
-    public static Collection<Statement> findCallTo(CallGraph cg, String methodName)
+    public static Collection<Statement> findCallTo(CallGraph cg, String methodName, String className)
     {
         Collection<Statement> calls = new HashSet<>();
         Collection<CGNode> visitedNodes = new HashSet<>();
         for (CGNode entry : cg.getEntrypointNodes()) {
-            collectCalls(entry, methodName, cg, calls, visitedNodes);
+            collectCalls(entry, methodName, className, cg, calls, visitedNodes);
         }
         return calls;
     }
 
-    private static void collectCalls(CGNode node, String methodName, CallGraph cg, Collection<Statement> calls, Collection<CGNode> visitedNodes)
+    private static void collectCalls(CGNode node, String methodName, String className, CallGraph cg, Collection<Statement> calls, Collection<CGNode> visitedNodes)
     {
         if (visitedNodes.contains(node))
             return;
 
         visitedNodes.add(node);
 
-        Statement s = findCallTo(node, methodName);
-        if (s != null) calls.add(s);
-
+        calls.addAll(findCallTo(node, methodName, className));
 
         Iterator<CallSiteReference> it = node.iterateCallSites();
 
@@ -91,7 +96,7 @@ public class SlicerUtil {
         {
             CallSiteReference callRef = it.next();
             for (CGNode tg : cg.getPossibleTargets(node, callRef))
-                collectCalls(tg, methodName, cg, calls, visitedNodes);
+                collectCalls(tg, methodName, className, cg, calls, visitedNodes);
         }
     }
 
@@ -114,30 +119,44 @@ public class SlicerUtil {
         return null;
     }
 
-    public static void dumpSlice(Collection<Statement> slice) {
+    public static void dumpSlice(Collection<Statement> slice) throws InvalidClassFileException {
         dumpSlice(slice, new PrintWriter(System.err));
     }
 
-    public static void dumpSlice(Collection<Statement> slice, PrintWriter w) {
-        w.println("SLICE:\n");
+    public static void dumpSlice(Collection<Statement> slice, PrintWriter w) throws InvalidClassFileException {
+        w.println("Full Slice:\n");
         int i = 1;
         for (Statement s : slice) {
-            if(!s.getKind().equals(Statement.Kind.NORMAL)) continue;
-            if (s.getNode()
-                    .getMethod()
-                    .getDeclaringClass()
-                    .getClassLoader()
-                    .getReference()
-                    .equals(ClassLoaderReference.Application)) {
                 String line = (i++) + "   " + s;
                 w.println(line);
                 w.flush();
+        }
+
+        w.println("\nSource Code Info:\n");
+        for (Statement s : slice)
+        {
+            if (s.getKind() == Statement.Kind.NORMAL)
+            {
+                CGNode node = s.getNode();
+                IMethod method = node.getMethod();
+                IClass declaringClass = method.getDeclaringClass();
+                if (declaringClass.getClassLoader()
+                    .getReference()
+                    .equals(ClassLoaderReference.Application)) {
+                    String fileName = declaringClass.getSourceFileName();
+
+                    int bcIndex, instructionIndex = ((NormalStatement) s).getInstructionIndex();
+                    bcIndex = ((ShrikeBTMethod) method).getBytecodeIndex(instructionIndex);
+
+                    w.println(declaringClass.toString() + ": " + fileName + ":" + method.getLineNumber(bcIndex));
+                    w.flush();
+                }
             }
         }
     }
 
     public static void dumpSliceToFile(Collection<Statement> slice, String fileName)
-            throws FileNotFoundException {
+            throws FileNotFoundException, InvalidClassFileException {
         File f = new File(fileName);
         FileOutputStream fo = new FileOutputStream(f);
         try (final PrintWriter w = new PrintWriter(fo)) {
