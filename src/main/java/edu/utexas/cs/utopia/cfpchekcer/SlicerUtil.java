@@ -9,6 +9,7 @@ import com.ibm.wala.ipa.callgraph.CGNode;
 import com.ibm.wala.ipa.callgraph.CallGraph;
 import com.ibm.wala.ipa.slicer.NormalStatement;
 import com.ibm.wala.ipa.slicer.Statement;
+import com.ibm.wala.ipa.slicer.StatementWithInstructionIndex;
 import com.ibm.wala.shrikeCT.InvalidClassFileException;
 import com.ibm.wala.ssa.IR;
 import com.ibm.wala.ssa.SSAAbstractInvokeInstruction;
@@ -135,7 +136,7 @@ public class SlicerUtil {
         w.println("\nSource Code Info:\n");
         for (Statement s : slice)
         {
-            if (s.getKind() == Statement.Kind.NORMAL)
+            if (s instanceof StatementWithInstructionIndex)
             {
                 CGNode node = s.getNode();
                 IMethod method = node.getMethod();
@@ -145,7 +146,7 @@ public class SlicerUtil {
                     .equals(ClassLoaderReference.Application)) {
                     String fileName = declaringClass.getSourceFileName();
 
-                    int bcIndex, instructionIndex = ((NormalStatement) s).getInstructionIndex();
+                    int bcIndex, instructionIndex = ((StatementWithInstructionIndex) s).getInstructionIndex();
                     bcIndex = ((ShrikeBTMethod) method).getBytecodeIndex(instructionIndex);
 
                     w.println(declaringClass.toString() + ": " + fileName + ":" + method.getLineNumber(bcIndex));
