@@ -1,0 +1,7 @@
+Primordial,Java,stdlib,none
+Primordial,Java,jarFile,primordial.jar.model
+Primordial,Java,jarFile,bench-repos/deps/android.jar
+Application,Java,jarFile,/Users/user/Downloads/dex-tools-2.1-SNAPSHOT/ConnectBot-svn-r501-english-dex2jar.jar
+Application,Java,binaryDir,bench-repos/harnesses/ConnectBot/build
+Application,Java,sourceDir,bench-repos/connectbot/src/
+Application,Java,sourceDir,bench-repos/harnesses/ConnectBot/

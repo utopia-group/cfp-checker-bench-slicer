@@ -3,7 +3,7 @@ package android.app;
 import android.app.Activity;
 import android.os.Bundle;
 
-import com.google.android.exoplayer2.testutil.HostActivity;
+import org.connectbot.ConsoleActivity;
 
 public class ActivityHarness
 {
@@ -94,6 +94,6 @@ public class ActivityHarness
 
     public static void main(String args[])
     {
-        activityHarness(new HostActivity());
+        activityHarness(new ConsoleActivity());
     }
 }

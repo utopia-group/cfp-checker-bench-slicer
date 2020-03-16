@@ -1,0 +1,54 @@
+diff --git a/testutils/src/main/java/com/google/android/exoplayer2/testutil/HostActivity.java b/testutils/src/main/java/com/google/android/exoplayer2/testutil/HostActivity.java
+index 39429a8fa..bd1fe2469 100644
+--- a/testutils/src/main/java/com/google/android/exoplayer2/testutil/HostActivity.java
++++ b/testutils/src/main/java/com/google/android/exoplayer2/testutil/HostActivity.java
+@@ -175,27 +175,27 @@ public final class HostActivity extends Activity implements SurfaceHolder.Callba
+ 
+   @Override
+   public void onStart() {
+-    Context appContext = getApplicationContext();
+-    WifiManager wifiManager = (WifiManager) appContext.getSystemService(Context.WIFI_SERVICE);
+-    wifiLock = wifiManager.createWifiLock(WifiManager.WIFI_MODE_FULL_HIGH_PERF, LOCK_TAG);
+-    wifiLock.acquire();
+-    PowerManager powerManager = (PowerManager) appContext.getSystemService(Context.POWER_SERVICE);
+-    wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, LOCK_TAG);
+-    wakeLock.acquire();
+     super.onStart();
+   }
+ 
+   @Override
+-  public void onPause() {
++  public void onResume() {
+     super.onPause();
+     if (Util.SDK_INT <= 23) {
+       maybeStopHostedTest();
+     }
++    Context appContext = getApplicationContext();
++    WifiManager wifiManager = (WifiManager) appContext.getSystemService(Context.WIFI_SERVICE);
++    wifiLock = wifiManager.createWifiLock(WifiManager.WIFI_MODE_FULL_HIGH_PERF, LOCK_TAG);
++    wifiLock.acquire();
++    PowerManager powerManager = (PowerManager) appContext.getSystemService(Context.POWER_SERVICE);
++    wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, LOCK_TAG);
++    wakeLock.acquire();
+   }
+ 
+   @Override
+-  public void onStop() {
+-    super.onStop();
++  public void onPause() {
++    super.onResume();
+     if (Util.SDK_INT > 23) {
+       maybeStopHostedTest();
+     }
+@@ -205,6 +205,11 @@ public final class HostActivity extends Activity implements SurfaceHolder.Callba
+     wifiLock = null;
+   }
+ 
++  @Override
++  public void onStop() {
++    super.onStop();
++  }
++
+   // SurfaceHolder.Callback
+ 
+   @Override

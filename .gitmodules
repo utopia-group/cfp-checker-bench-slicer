@@ -1,3 +1,9 @@
 [submodule "bench-repos/ExoPlayer"]
 	path = bench-repos/ExoPlayer
 	url = git@github.com:google/ExoPlayer.git
+[submodule "bench-repos/connectbot"]
+	path = bench-repos/connectbot
+	url = git@github.com:connectbot/connectbot.git
+[submodule "bench-repos/Hystrix"]
+	path = bench-repos/Hystrix
+	url = git@github.com:Netflix/Hystrix.git
