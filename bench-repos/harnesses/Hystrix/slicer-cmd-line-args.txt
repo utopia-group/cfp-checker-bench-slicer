@@ -1,0 +1,16 @@
+wala.input.txt
+Ljava/util/concurrent/locks/ReentrantLock
+lock
+unlock
+tryLock
+--
+-keep-line-number
+-process-dir
+bench-repos/harnesses/Hystrix/build/relock/
+-process-dir
+/Users/user/workspace/Hystrix/hystrix-core/build/libs/hystrix-core-1.6.0-SNAPSHOT.jar
+-w
+-exclude
+java*
+-no-bodies-for-excluded
+-allow-phantom-refs

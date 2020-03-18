@@ -1,0 +1,15 @@
+wala.input.txt
+Landroid/os/PowerManager$WakeLock
+acquire
+release
+--
+-keep-line-number
+-process-dir
+bench-repos/harnesses/ConnectBot/build
+-process-dir
+/Users/user/Downloads/dex-tools-2.1-SNAPSHOT/ConnectBot-svn-r501-english-dex2jar.jar
+-w
+-exclude
+java*
+-no-bodies-for-excluded
+-allow-phantom-refs
