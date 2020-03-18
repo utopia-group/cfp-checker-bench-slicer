@@ -25,6 +25,9 @@ import soot.jimple.JasminClass;
 import soot.jimple.ReturnStmt;
 import soot.jimple.ReturnVoidStmt;
 import soot.options.Options;
+import soot.toolkits.graph.BlockGraph;
+import soot.toolkits.graph.CompleteBlockGraph;
+import soot.toolkits.graph.ExceptionalBlockGraph;
 import soot.util.Chain;
 import soot.util.JasminOutputStream;
 
@@ -240,14 +243,16 @@ public class BenchSlicer
                 UnitPatchingChain units = mBody.getUnits();
                 if (traps.size() > 0)
                 {
-                    for (Trap t : traps)
-                    {
-                        t.getUnitBoxes()
-                         .stream()
-                         .map(UnitBox::getUnit)
-                         .forEach(units::remove);
-                    }
+                    Set<Unit> handlerHeads = traps.stream().map(Trap::getHandlerUnit).collect(Collectors.toSet());
                     traps.clear();
+
+                    BlockGraph bGraph = new CompleteBlockGraph(mBody);
+                    Set<Unit> unitsToRemove = new HashSet<>();
+                    bGraph.getBlocks()
+                          .stream()
+                          .filter(b -> handlerHeads.contains(b.getHead()))
+                          .forEach(b -> b.forEach(unitsToRemove::add));
+                    unitsToRemove.forEach(units::remove);
                 }
 
                 for (Unit u : units)
@@ -282,7 +287,10 @@ public class BenchSlicer
                     for (Unit u : mBody.getUnits()) {
                         Set<Value> defs = u.getDefBoxes().stream().map(ValueBox::getValue).collect(Collectors.toSet());
                         if (!Collections.disjoint(sliceUses, defs))
+                        {
                             slicesDefs.add(u);
+                            sliceUses.addAll(u.getUseBoxes().stream().map(ValueBox::getValue).collect(Collectors.toSet()));
+                        }
                     }
                 }
             }
@@ -373,11 +381,10 @@ public class BenchSlicer
                     for (Unit u : units)
                     {
                         int unitJavaLineNum = u.getJavaSourceStartLineNumber();
-                        if (unitJavaLineNum != -1 && !(sliceLocs != null && sliceLocs.contains(unitJavaLineNum)) && !slicesDefs.contains(u))
-                        {
-                            if (!(u instanceof  ReturnVoidStmt || u instanceof  ReturnStmt))
-                                unitsToRemove.add(u);
-                        }
+                        if (unitJavaLineNum == -1 || (sliceLocs != null && sliceLocs.contains(unitJavaLineNum)) || slicesDefs.contains(u)) continue;
+
+                        if (!(u instanceof  ReturnVoidStmt || u instanceof  ReturnStmt))
+                            unitsToRemove.add(u);
                     }
 
                     unitsToRemove.forEach(units::remove);
