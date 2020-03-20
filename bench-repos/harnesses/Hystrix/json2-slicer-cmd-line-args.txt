@@ -1,0 +1,16 @@
+wala.input.txt
+Lcom/fasterxml/jackson/core/JsonGenerator
+*
+--
+-keep-line-number
+-process-dir
+bench-repos/harnesses/Hystrix/build/json2/
+-process-dir
+/Users/user/workspace/cfp-checker-bench-slicer/bench-repos/Hystrix/hystrix-core/build/libs/hystrix-core-0.1.0-SNAPSHOT.jar
+-process-dir
+/Users/user/workspace/cfp-checker-bench-slicer/bench-repos/Hystrix/hystrix-serialization/build/libs/hystrix-serialization-0.1.0-SNAPSHOT.jar
+-w
+-exclude
+java*
+-no-bodies-for-excluded
+-allow-phantom-refs
