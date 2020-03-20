@@ -60,7 +60,7 @@ public class SlicerUtil {
                 SSAAbstractInvokeInstruction call = (SSAAbstractInvokeInstruction) s;
                 MethodReference declaredTarget = call.getCallSite().getDeclaredTarget();
                 if (declaredTarget.getDeclaringClass().getName().toString().equals(className) &&
-                        declaredTarget.getName().toString().equals(methodName)) {
+                        (methodName.equals("*") || declaredTarget.getName().toString().equals(methodName))) {
                     IntSet indices = ir.getCallInstructionIndices(call.getCallSite());
                     Assertions.productionAssertion(
                             indices.size() == 1, "expected 1 but got " + indices.size());

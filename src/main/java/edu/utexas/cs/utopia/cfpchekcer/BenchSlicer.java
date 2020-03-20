@@ -27,7 +27,6 @@ import soot.jimple.ReturnVoidStmt;
 import soot.options.Options;
 import soot.toolkits.graph.BlockGraph;
 import soot.toolkits.graph.CompleteBlockGraph;
-import soot.toolkits.graph.ExceptionalBlockGraph;
 import soot.util.Chain;
 import soot.util.JasminOutputStream;
 
@@ -37,12 +36,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.ibm.wala.ipa.slicer.Slicer.*;
 
 public class BenchSlicer
 {
+    private static boolean jimpleOutput = false;
+
     private static final String EXCLUSIONS =
             "java\\/awt\\/.*\n"
                     + "javax\\/swing\\/.*\n"
@@ -179,11 +179,6 @@ public class BenchSlicer
 
             @Override
             public void caseFloatType(FloatType t) {
-                result = false;
-            }
-
-            @Override
-            public void caseArrayType(ArrayType t) {
                 result = false;
             }
         };
@@ -398,24 +393,36 @@ public class BenchSlicer
             String className = c.getName();
             if (!reachableClasses.contains(className)) continue;
 
-            String fileName = SourceLocator.v().getFileNameFor(c, Options.output_format_class);
-//            String fileName = SourceLocator.v().getFileNameFor(c, Options.output_format_jimple);
+            String fileName = SourceLocator.v().getFileNameFor(c, jimpleOutput ? Options.output_format_jimple : Options.output_format_class);
             Path file = Paths.get(fileName);
             Files.createDirectories(file.getParent());
 
             Files.deleteIfExists(file);
-            try (PrintWriter writerOut = new PrintWriter(new OutputStreamWriter(new JasminOutputStream(Files.newOutputStream(Files.createFile(file))))))
-//            try (PrintWriter writerOut = new PrintWriter(new OutputStreamWriter(Files.newOutputStream(Files.createFile(file)))))
+            if (jimpleOutput)
             {
-                JasminClass jasminClass = new soot.jimple.JasminClass(c);
-                jasminClass.print(writerOut);
-                writerOut.flush();
-//                Printer.v().printTo(c, writerOut);
+                try (PrintWriter writerOut = new PrintWriter(new OutputStreamWriter(Files.newOutputStream(Files.createFile(file)))))
+                {
+                    Printer.v().printTo(c, writerOut);
+                }
+                catch (FileNotFoundException e)
+                {
+                    System.err.println(e.getMessage());
+                    System.exit(1);
+                }
             }
-            catch (FileNotFoundException e)
+            else
             {
-                System.err.println(e.getMessage());
-                System.exit(1);
+                try (PrintWriter writerOut = new PrintWriter(new OutputStreamWriter(new JasminOutputStream(Files.newOutputStream(Files.createFile(file))))))
+                {
+                    JasminClass jasminClass = new soot.jimple.JasminClass(c);
+                    jasminClass.print(writerOut);
+                    writerOut.flush();
+                }
+                catch (FileNotFoundException e)
+                {
+                    System.err.println(e.getMessage());
+                    System.exit(1);
+                }
             }
         }
     }
