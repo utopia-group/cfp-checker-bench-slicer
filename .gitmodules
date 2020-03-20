@@ -7,3 +7,6 @@
 [submodule "bench-repos/Hystrix"]
 	path = bench-repos/Hystrix
 	url = git@github.com:Netflix/Hystrix.git
+[submodule "hadoop"]
+	path = bench-repos/hadoop
+	url = git@github.com:apache/hadoop.git
