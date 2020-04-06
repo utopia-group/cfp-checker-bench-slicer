@@ -2,7 +2,7 @@ import java.util.Collections;
 import com.netflix.hystrix.metric.HystrixRequestEvents;
 import com.netflix.hystrix.serial.SerialHystrixRequestEvents;
 
-public class JsonHarness
+public class JsonHarness1
 {
     private static int nd$int()
     {
