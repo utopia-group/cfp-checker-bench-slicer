@@ -1,5 +1,14 @@
 #!/bin/bash
 
+# Note: do not think that we need two recompile ConnectBot.
+# ConnectBot-Bug
+echo "Building ConnectBot-Bug"
+(cd bench-repos/harnesses/ConnectBot/; ./bug-build-command.sh)
+
+# ConnectBot-Fix
+echo "Building ConnectBot-Fix"
+(cd bench-repos/harnesses/ConnectBot/; ./fix-build-command.sh)
+
 # ExoPlayer-Bug
 echo "Building ExoPlayer-Bug"
 (cd bench-repos/harnesses/ExoPlayer/; ./build-command.sh exoplayer-bug)
