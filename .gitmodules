@@ -10,3 +10,9 @@
 [submodule "hadoop"]
 	path = bench-repos/hadoop
 	url = git@github.com:apache/hadoop.git
+[submodule "bench-repos/guice"]
+	path = bench-repos/guice
+	url = git@github.com:google/guice.git
+[submodule "bench-repos/bitcoinj"]
+	path = bench-repos/bitcoinj
+	url = git@github.com:bitcoinj/bitcoinj.git

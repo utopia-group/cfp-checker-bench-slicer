@@ -10,9 +10,9 @@ import com.ibm.wala.ipa.callgraph.propagation.InstanceKey;
 import com.ibm.wala.ipa.callgraph.propagation.PointerAnalysis;
 import com.ibm.wala.ipa.cha.ClassHierarchyFactory;
 import com.ibm.wala.ipa.cha.IClassHierarchy;
-import com.ibm.wala.ipa.slicer.Slicer;
 import com.ibm.wala.ipa.slicer.Statement;
 import com.ibm.wala.ipa.slicer.StatementWithInstructionIndex;
+import com.ibm.wala.ipa.slicer.thin.CISlicer;
 import com.ibm.wala.shrikeCT.InvalidClassFileException;
 import com.ibm.wala.types.ClassLoaderReference;
 import com.ibm.wala.util.CancelException;
@@ -20,10 +20,7 @@ import com.ibm.wala.util.WalaException;
 import com.ibm.wala.util.config.AnalysisScopeReader;
 import com.ibm.wala.util.config.FileOfClasses;
 import soot.*;
-import soot.jimple.IdentityStmt;
-import soot.jimple.JasminClass;
-import soot.jimple.ReturnStmt;
-import soot.jimple.ReturnVoidStmt;
+import soot.jimple.*;
 import soot.options.Options;
 import soot.toolkits.graph.BlockGraph;
 import soot.toolkits.graph.CompleteBlockGraph;
@@ -76,9 +73,9 @@ public class BenchSlicer
         Iterable<Entrypoint> entrypoints = com.ibm.wala.ipa.callgraph.impl.Util.makeMainEntrypoints(
                         scope, cha);
 
-        AnalysisOptions options = new AnalysisOptions(scope, entrypoints);// CallGraphTestUtil.makeAnalysisOptions(scope, entrypoints);
+        AnalysisOptions options = new AnalysisOptions(scope, entrypoints);
 
-        CallGraphBuilder<InstanceKey> builder = //Util.makeRTABuilder(options, new AnalysisCacheImpl(), cha, scope);//Util.makeNCFABuilder(4,options, new AnalysisCacheImpl(), cha, scope);
+        CallGraphBuilder<InstanceKey> builder = //Util.makeVanillaNCFABuilder(2,options, new AnalysisCacheImpl(), cha, scope);//Util.makeRTABuilder(options, new AnalysisCacheImpl(), cha, scope);//
                 Util.makeZeroOneCFABuilder(Language.JAVA, options, new AnalysisCacheImpl(), cha, scope);
         CallGraph cg = builder.makeCallGraph(options, null);
 
@@ -114,10 +111,10 @@ public class BenchSlicer
                 final PointerAnalysis<InstanceKey> pointerAnalysis = builder.getPointerAnalysis();
 
                 System.out.print("Calculating slice... ");
-                Collection<Statement> slice = Slicer.computeBackwardSlice(s, cg, pointerAnalysis, DataDependenceOptions.FULL, ControlDependenceOptions.NO_EXCEPTIONAL_EDGES);
+                //Collection<Statement> slice = Slicer.computeBackwardSlice(s, cg, pointerAnalysis, DataDependenceOptions.FULL, ControlDependenceOptions.NO_EXCEPTIONAL_EDGES);
 
-//            com.ibm.wala.ipa.slicer.thin.CISlicer slicer = new CISlicer(cg, pointerAnalysis, DataDependenceOptions.NO_HEAP, ControlDependenceOptions.FULL);
-//            Collection<Statement> slice = slicer.computeBackwardThinSlice(s);
+                CISlicer slicer = new CISlicer(cg, pointerAnalysis, DataDependenceOptions.NO_HEAP, ControlDependenceOptions.NO_EXCEPTIONAL_EDGES);
+                Collection<Statement> slice = slicer.computeBackwardThinSlice(s);
                 System.out.println("done");
 //                SlicerUtil.dumpSlice(slice);
                 for (Statement stmt : slice)
@@ -165,27 +162,17 @@ public class BenchSlicer
         return -1;
     }
 
-    private static boolean isTypeSupported(Type sootType)
+    private static void checkForDanglingUsages(Body mBody)
     {
-        TypeSwitch tySwitch = new TypeSwitch()
+        Set<Value> mBodyUses = mBody.getUseBoxes().stream().map(ValueBox::getValue).collect(Collectors.toSet());
+        Set<Value> mBodyDefs = mBody.getDefBoxes().stream().map(ValueBox::getValue).collect(Collectors.toSet());
+
+        for (Local l : mBody.getLocals())
         {
-            private boolean result = true;
-
-            @Override
-            public Boolean getResult()
-            {
-                return result;
-            }
-
-            @Override
-            public void caseFloatType(FloatType t) {
-                result = false;
-            }
-        };
-
-        sootType.apply(tySwitch);
-
-        return (Boolean) tySwitch.getResult();
+            if (mBodyUses.contains(l) && !mBodyDefs.contains(l))
+                if (!l.getType().toString().contains("Throwable") && !l.getType().toString().contains("Exception"))
+                    throw new RuntimeException("Invalid slicing: " + l + " used but not defined");
+        }
     }
 
     public static void main(String[] args) throws Exception
@@ -218,19 +205,12 @@ public class BenchSlicer
             String className = c.getName();
             if (!reachableClasses.contains(className)) continue;
 
-            Set<SootMethod> methsToRemove = new HashSet<>();
-
-            for (SootMethod m : c.getMethods())
-                if (!reachableMethods.get(className).contains(m.getName()) || !isTypeSupported(m.getReturnType()))
-                    methsToRemove.add(m);
-
-            methsToRemove.forEach(c::removeMethod);
-
             Map<String, Set<Integer>> methLocs = slicesLocInfo.get(className);
             for (SootMethod m : c.getMethods())
             {
                 Set<Integer> locs = methLocs != null ? methLocs.get(m.getName()) : null;
 
+                if (!m.hasActiveBody()) continue;
                 Body mBody = m.getActiveBody();
 
                 Chain<Trap> traps = mBody.getTraps();
@@ -247,7 +227,23 @@ public class BenchSlicer
                           .stream()
                           .filter(b -> handlerHeads.contains(b.getHead()))
                           .forEach(b -> b.forEach(unitsToRemove::add));
+
+                    int oldSz;
+                    do
+                    {
+                        oldSz = unitsToRemove.size();
+                        Set<Value> killedDefs = unitsToRemove.stream()
+                                                             .flatMap(u -> u.getDefBoxes().stream())
+                                                             .map(ValueBox::getValue)
+                                                             .collect(Collectors.toSet());
+
+                        unitsToRemove.addAll(units.stream()
+                                                  .filter(u -> !Collections.disjoint(u.getUseBoxes().stream().map(ValueBox::getValue).collect(Collectors.toSet()), killedDefs))
+                                                  .collect(Collectors.toSet()));
+                    } while (oldSz != unitsToRemove.size());
+
                     unitsToRemove.forEach(units::remove);
+                    checkForDanglingUsages(mBody);
                 }
 
                 for (Unit u : units)
@@ -291,73 +287,6 @@ public class BenchSlicer
             }
         } while(slicesDefs.size() != oldSz);
 
-        Set<Value> unsupportedValues = new HashSet<>();
-        for (SootClass c : Scene.v().getApplicationClasses())
-        {
-            String className = c.getName();
-            if (!reachableClasses.contains(className)) continue;
-
-            for (SootMethod m : c.getMethods())
-            {
-                if (!m.hasActiveBody()) continue;
-
-                Set<Unit> unitsToRemove = new HashSet<>();
-                UnitPatchingChain units = m.getActiveBody().getUnits();
-                for (Unit u : units)
-                {
-                    Set<Value> unsupportedDefs = u.getDefBoxes().stream()
-                            .map(ValueBox::getValue)
-                            .filter(v -> !isTypeSupported(v.getType()))
-                            .collect(Collectors.toSet());
-
-                    if (!(u instanceof IdentityStmt) && !unsupportedDefs.isEmpty())
-                    {
-                        unitsToRemove.add(u);
-                        unsupportedValues.addAll(unsupportedDefs);
-                    }
-
-                }
-
-                unitsToRemove.forEach(units::remove);
-            }
-        }
-
-        do {
-           oldSz = unsupportedValues.size();
-
-            for (SootClass c : Scene.v().getApplicationClasses())
-            {
-                String className = c.getName();
-                if (!reachableClasses.contains(className)) continue;
-
-                for (SootMethod m : c.getMethods())
-                {
-                    if (!m.hasActiveBody()) continue;
-
-                    Set<Unit> unitsToRemove = new HashSet<>();
-                    UnitPatchingChain units = m.getActiveBody().getUnits();
-                    for (Unit u : units)
-                    {
-                        Collection<Value> uses = u.getUseBoxes().stream()
-                                .map(ValueBox::getValue)
-                                .collect(Collectors.toSet());
-
-                        if (!(u instanceof IdentityStmt) && !Collections.disjoint(uses, unsupportedValues))
-                        {
-                            unitsToRemove.add(u);
-                            unsupportedValues.addAll(u.getDefBoxes()
-                                    .stream()
-                                    .map(ValueBox::getValue)
-                                    .collect(Collectors.toSet()));
-                        }
-                    }
-
-                    unitsToRemove.forEach(units::remove);
-                }
-            }
-        } while (unsupportedValues.size() != oldSz);
-
-
         for (SootClass c : Scene.v().getApplicationClasses())
         {
             String className = c.getName();
@@ -376,13 +305,14 @@ public class BenchSlicer
                     for (Unit u : units)
                     {
                         int unitJavaLineNum = u.getJavaSourceStartLineNumber();
-                        if (unitJavaLineNum == -1 || (sliceLocs != null && sliceLocs.contains(unitJavaLineNum)) || slicesDefs.contains(u)) continue;
+                        if (u instanceof IdentityStmt || u instanceof  ReturnVoidStmt || u instanceof  ReturnStmt  || (sliceLocs != null && sliceLocs.contains(unitJavaLineNum)) || slicesDefs.contains(u)) continue;
 
-                        if (!(u instanceof  ReturnVoidStmt || u instanceof  ReturnStmt))
-                            unitsToRemove.add(u);
+                        unitsToRemove.add(u);
                     }
 
+                    //Body oldBody = new JimpleBody(m.getActiveBody());
                     unitsToRemove.forEach(units::remove);
+                    checkForDanglingUsages(m.getActiveBody());
                 }
             }
         }
@@ -418,10 +348,12 @@ public class BenchSlicer
                     jasminClass.print(writerOut);
                     writerOut.flush();
                 }
-                catch (FileNotFoundException e)
+                catch (Throwable e)
                 {
+                    System.err.println("Failed to translate: " + className);
+                    e.printStackTrace();
                     System.err.println(e.getMessage());
-                    System.exit(1);
+                    Files.deleteIfExists(file);
                 }
             }
         }
