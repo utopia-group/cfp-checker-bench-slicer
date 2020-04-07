@@ -1,6 +1,6 @@
 Primordial,Java,stdlib,none
 Primordial,Java,jarFile,primordial.jar.model
-Application,Java,jarFile,/Users/user/workspace/cfp-checker-bench-slicer/bench-repos/bitcoinj/core/build/libs/bitcoinj-core-0.16-SNAPSHOT.jar
+Application,Java,jarFile,bench-repos/bitcoinj/core/build/libs/bitcoinj-core-0.16-SNAPSHOT.jar
 Application,Java,binaryDir,bench-repos/harnesses/bitcoinj/build/
 Application,Java,sourceDir,bench-repos/bitcoinj/core/src/main/java
 Application,Java,sourceDir,bench-repos/harnesses/bitcoinj

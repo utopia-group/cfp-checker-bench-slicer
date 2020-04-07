@@ -1,0 +1,7 @@
+Primordial,Java,stdlib,none
+Primordial,Java,jarFile,primordial.jar.model
+Primordial,Java,jarFile,bench-repos/deps/android.jar
+Application,Java,binaryDir,bench-repos/harnesses/ExoPlayer/exoplayer-fix/
+Application,Java,sourceDir,bench-repos/ExoPlayer/testutils/src/main/java/
+Application,Java,sourceDir,bench-repos/harnesses/ExoPlayer/
+Application,Java,sourceDir,bench-repos/ExoPlayer/library/core/src/main/java/

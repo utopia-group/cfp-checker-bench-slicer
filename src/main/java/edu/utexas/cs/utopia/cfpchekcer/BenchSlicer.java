@@ -175,6 +175,28 @@ public class BenchSlicer
         }
     }
 
+    private static Set<Unit> getUnitsWithDanglingUsages(Body mBody, Set<Unit> killedUnits)
+    {
+        Set<Value> mBodyDefs = mBody.getDefBoxes().stream().map(ValueBox::getValue).collect(Collectors.toSet());
+        Set<Value> killedDefs = killedUnits.stream().flatMap(u -> u.getDefBoxes().stream()).map(ValueBox::getValue).collect(Collectors.toSet());
+        Set<Unit> units = new HashSet<>();
+        for (Unit u : mBody.getUnits())
+        {
+            Set<Value> danglingUses = u.getUseBoxes()
+                                       .stream()
+                                       .map(ValueBox::getValue)
+                                       .filter(killedDefs::contains)
+                                       .filter(v -> !mBodyDefs.contains(v))
+                                       .collect(Collectors.toSet());
+
+            if (!danglingUses.isEmpty())
+                units.add(u);
+
+        }
+
+        return units;
+    }
+
     public static void main(String[] args) throws Exception
     {
         int splitIndex = argsSplitIndex(args);
@@ -222,27 +244,24 @@ public class BenchSlicer
                     traps.clear();
 
                     BlockGraph bGraph = new CompleteBlockGraph(mBody);
-                    Set<Unit> unitsToRemove = new HashSet<>();
-                    bGraph.getBlocks()
-                          .stream()
-                          .filter(b -> handlerHeads.contains(b.getHead()))
-                          .forEach(b -> b.forEach(unitsToRemove::add));
+                    Set<Unit> unitsToRemove = bGraph.getBlocks()
+                                                    .stream()
+                                                    .filter(b -> handlerHeads.contains(b.getHead()))
+                                                    .flatMap(b ->
+                                                             {
+                                                                 Set<Unit> bUnits = new HashSet<>();
+                                                                 for (Unit u : b)
+                                                                     bUnits.add(u);
+                                                                 return bUnits.stream();
+                                                             })
+                                                    .collect(Collectors.toSet());
 
-                    int oldSz;
                     do
                     {
-                        oldSz = unitsToRemove.size();
-                        Set<Value> killedDefs = unitsToRemove.stream()
-                                                             .flatMap(u -> u.getDefBoxes().stream())
-                                                             .map(ValueBox::getValue)
-                                                             .collect(Collectors.toSet());
+                        unitsToRemove.forEach(units::remove);
+                        unitsToRemove = getUnitsWithDanglingUsages(mBody, unitsToRemove);
+                    } while (unitsToRemove.size() > 0);
 
-                        unitsToRemove.addAll(units.stream()
-                                                  .filter(u -> !Collections.disjoint(u.getUseBoxes().stream().map(ValueBox::getValue).collect(Collectors.toSet()), killedDefs))
-                                                  .collect(Collectors.toSet()));
-                    } while (oldSz != unitsToRemove.size());
-
-                    unitsToRemove.forEach(units::remove);
                     checkForDanglingUsages(mBody);
                 }
 
@@ -302,10 +321,17 @@ public class BenchSlicer
 
                     Set<Unit> unitsToRemove = new HashSet<>();
                     UnitPatchingChain units = m.getActiveBody().getUnits();
+                    Set<Unit> retStmts = units.stream()
+                                              .filter(u -> u instanceof ReturnStmt || u instanceof ReturnVoidStmt)
+                                              .collect(Collectors.toSet());
                     for (Unit u : units)
                     {
                         int unitJavaLineNum = u.getJavaSourceStartLineNumber();
-                        if (u instanceof IdentityStmt || u instanceof  ReturnVoidStmt || u instanceof  ReturnStmt  || (sliceLocs != null && sliceLocs.contains(unitJavaLineNum)) || slicesDefs.contains(u)) continue;
+                        if (u instanceof IdentityStmt ||
+                            u instanceof  ReturnVoidStmt ||
+                            u instanceof  ReturnStmt ||
+                            (u instanceof ThrowStmt && retStmts.isEmpty()) ||
+                            (sliceLocs != null && sliceLocs.contains(unitJavaLineNum)) || slicesDefs.contains(u)) continue;
 
                         unitsToRemove.add(u);
                     }
