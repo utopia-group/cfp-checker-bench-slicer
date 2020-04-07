@@ -11,6 +11,7 @@ echo "Building ConnectBot-Fix"
 
 # ExoPlayer-Bug
 echo "Building ExoPlayer-Bug"
+(cd bench-repos/ExoPlayer/; git checkout -- testutils/src/main/java/com/google/android/exoplayer2/testutil/HostActivity.java)
 (cd bench-repos/harnesses/ExoPlayer/; ./build-command.sh exoplayer-bug)
 
 # ExoPlayer-Fix
