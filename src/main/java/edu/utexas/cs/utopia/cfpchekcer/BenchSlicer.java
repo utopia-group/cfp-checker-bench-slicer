@@ -273,7 +273,7 @@ public class BenchSlicer
                     {
                         sliceUses.addAll(uses);
                     }
-                    else if (u instanceof ReturnStmt || u instanceof  ReturnVoidStmt)
+                    else if (u instanceof ReturnStmt || u instanceof  ReturnVoidStmt || u instanceof ThrowStmt)
                     {
                         sliceUses.addAll(uses);
                     }
@@ -321,16 +321,14 @@ public class BenchSlicer
 
                     Set<Unit> unitsToRemove = new HashSet<>();
                     UnitPatchingChain units = m.getActiveBody().getUnits();
-                    Set<Unit> retStmts = units.stream()
-                                              .filter(u -> u instanceof ReturnStmt || u instanceof ReturnVoidStmt)
-                                              .collect(Collectors.toSet());
+
                     for (Unit u : units)
                     {
                         int unitJavaLineNum = u.getJavaSourceStartLineNumber();
                         if (u instanceof IdentityStmt ||
                             u instanceof  ReturnVoidStmt ||
                             u instanceof  ReturnStmt ||
-                            (u instanceof ThrowStmt && retStmts.isEmpty()) ||
+                            u instanceof ThrowStmt ||
                             (sliceLocs != null && sliceLocs.contains(unitJavaLineNum)) || slicesDefs.contains(u)) continue;
 
                         unitsToRemove.add(u);
