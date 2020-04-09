@@ -1,0 +1,7 @@
+Primordial,Java,stdlib,none
+Primordial,Java,jarFile,primordial.jar.model
+Primordial,Java,jarFile,bench-repos/deps/android.jar
+Application,Java,jarFile,bench-repos/harnesses/glide/jars/glide-4.11.0.jar
+Application,Java,binaryDir,bench-repos/harnesses/glide/build/
+Application,Java,sourceDir,bench-repos/glide/library/src/main/java
+Application,Java,sourceDir,bench-repos/harnesses/glide/

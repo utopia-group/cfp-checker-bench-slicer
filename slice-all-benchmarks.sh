@@ -59,3 +59,8 @@ ${JAVA_HOME}/bin/java -jar ${JAR} bench-repos/harnesses/bitcoinj/wala.input.txt 
 echo "Slicing hadoop"
 rm -rf Hadoop
 ${JAVA_HOME}/bin/java -jar ${JAR} bench-repos/harnesses/hadoop/wala.input.txt Lcom/fasterxml/jackson/core/JsonGenerator '*' -- -process-dir bench-repos/hadoop/hadoop-mapreduce-project/hadoop-mapreduce-client/hadoop-mapreduce-client-core/target/hadoop-mapreduce-client-core-3.3.0-SNAPSHOT.jar -process-dir bench-repos/harnesses/hadoop/build/ -output-dir Hadoop ${SOOT_COMMON_OPTS}
+
+# glide
+echo "Slicing glide"
+rm -rf Glide
+${JAVA_HOME}/bin/java -jar ${JAR} bench-repos/harnesses/glide/wala.input.txt Landroid/graphics/Canvas save restore -- -process-dir bench-repos/harnesses/glide/build/ -process-dir bench-repos/harnesses/glide/jars/glide-4.11.0.jar -output-dir Glide ${SOOT_COMMON_OPTS}

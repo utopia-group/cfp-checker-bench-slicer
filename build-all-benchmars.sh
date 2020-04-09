@@ -38,3 +38,7 @@ echo "Building bitcoinj"
 # hadoop
 echo "Building hadoop"
 (cd bench-repos/harnesses/hadoop/; ./build-command.sh)
+
+# glide
+echo "Building glide"
+(cd bench-repos/harnesses/glide/; ./build-command.sh)
