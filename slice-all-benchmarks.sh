@@ -63,4 +63,5 @@ ${JAVA_HOME}/bin/java -jar ${JAR} bench-repos/harnesses/hadoop/wala.input.txt Lc
 # glide
 echo "Slicing glide"
 rm -rf Glide
+(cd bench-repos/glide/; git checkout v4.11.0)
 ${JAVA_HOME}/bin/java -jar ${JAR} bench-repos/harnesses/glide/wala.input.txt Landroid/graphics/Canvas save restore -- -process-dir bench-repos/harnesses/glide/build/ -process-dir bench-repos/harnesses/glide/jars/glide-4.11.0.jar -output-dir Glide ${SOOT_COMMON_OPTS}
