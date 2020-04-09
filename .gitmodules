@@ -16,3 +16,6 @@
 [submodule "bench-repos/bitcoinj"]
 	path = bench-repos/bitcoinj
 	url = git@github.com:bitcoinj/bitcoinj.git
+[submodule "glide"]
+	path = bench-repos/glide
+	url = git@github.com:bumptech/glide.git
