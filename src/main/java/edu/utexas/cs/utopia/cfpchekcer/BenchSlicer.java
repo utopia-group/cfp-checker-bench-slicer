@@ -55,7 +55,6 @@ public class BenchSlicer
                     + "java\\/security\\/.*\n"
                     + "android\\/os\\/.*\n"
                     + "android\\/util\\/.*\n"
-                    + "android\\/graphics\\/.*\n"
                     + "android\\/animation\\/.*\n"
                     + "";
 
