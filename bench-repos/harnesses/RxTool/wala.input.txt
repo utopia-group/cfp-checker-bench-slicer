@@ -1,0 +1,7 @@
+Primordial,Java,stdlib,none
+Primordial,Java,jarFile,primordial.jar.model
+Primordial,Java,jarFile,bench-repos/deps/android.jar
+Application,Java,jarFile,bench-repos/RxTool/RxUI/build/intermediates/compile_library_classes/release/classes.jar
+Application,Java,binaryDir,bench-repos/harnesses/RxTool/build/
+Application,Java,sourceDir,bench-repos/RxTool/RxUI/build/tmp/kapt3/stubs/release
+Application,Java,sourceDir,bench-repos/harnesses/RxTool/

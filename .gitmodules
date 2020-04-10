@@ -19,3 +19,12 @@
 [submodule "glide"]
 	path = bench-repos/glide
 	url = git@github.com:bumptech/glide.git
+[submodule "bench-repos/atlas"]
+	path = bench-repos/atlas
+	url = git@github.com:alibaba/atlas.git
+[submodule "bench-repos/RxTool"]
+	path = bench-repos/RxTool
+	url = git@github.com:Tamsiree/RxTool.git
+[submodule "bench-repos/litho"]
+	path = bench-repos/litho
+	url = git@github.com:facebook/litho.git

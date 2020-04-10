@@ -42,3 +42,7 @@ echo "Building hadoop"
 # glide
 echo "Building glide"
 (cd bench-repos/harnesses/glide/; ./build-command.sh)
+
+# RxTool
+echo "Building RxTool"
+(cd bench-repos/harnesses/RxTool; ./build-command.sh)

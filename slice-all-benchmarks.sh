@@ -65,3 +65,8 @@ echo "Slicing glide"
 rm -rf Glide
 (cd bench-repos/glide/; git checkout v4.11.0)
 ${JAVA_HOME}/bin/java -jar ${JAR} bench-repos/harnesses/glide/wala.input.txt Landroid/graphics/Canvas save restore -- -process-dir bench-repos/harnesses/glide/build/ -process-dir bench-repos/harnesses/glide/jars/glide-4.11.0.jar -output-dir Glide ${SOOT_COMMON_OPTS}
+
+# RxTool
+echo "Slicing RxTool"
+rm -rf RxTool
+${JAVA_HOME}/bin/java -jar ${JAR} bench-repos/harnesses/RxTool/wala.input.txt Landroid/graphics/Canvas save restore restoreToCount -- -process-dir bench-repos/harnesses/RxTool/build/ -process-dir bench-repos/RxTool/RxUI/build/intermediates/compile_library_classes/release/classes.jar -output-dir RxTool ${SOOT_COMMON_OPTS}
