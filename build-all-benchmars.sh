@@ -46,3 +46,7 @@ echo "Building glide"
 # RxTool
 echo "Building RxTool"
 (cd bench-repos/harnesses/RxTool; ./build-command.sh)
+
+# Litho
+echo "Building litho"
+(cd bench-repos/harnesses/litho; ./build-command.sh)

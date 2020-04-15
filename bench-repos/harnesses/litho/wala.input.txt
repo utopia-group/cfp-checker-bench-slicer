@@ -1,0 +1,7 @@
+Primordial,Java,stdlib,none
+Primordial,Java,jarFile,primordial.jar.model
+Primordial,Java,jarFile,bench-repos/deps/android.jar
+Application,Java,jarFile,bench-repos/litho/litho-core/build/intermediates/compile_library_classes/release/classes.jar
+Application,Java,binaryDir,bench-repos/harnesses/litho/build/
+Application,Java,sourceDir,bench-repos/litho/litho-core/src/main/java/
+Application,Java,sourceDir,bench-repos/harnesses/litho/

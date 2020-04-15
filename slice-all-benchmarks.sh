@@ -70,3 +70,8 @@ ${JAVA_HOME}/bin/java -jar ${JAR} bench-repos/harnesses/glide/wala.input.txt Lan
 echo "Slicing RxTool"
 rm -rf RxTool
 ${JAVA_HOME}/bin/java -jar ${JAR} bench-repos/harnesses/RxTool/wala.input.txt Landroid/graphics/Canvas save restore restoreToCount -- -process-dir bench-repos/harnesses/RxTool/build/ -process-dir bench-repos/RxTool/RxUI/build/intermediates/compile_library_classes/release/classes.jar -output-dir RxTool ${SOOT_COMMON_OPTS}
+
+# Litho
+echo "Slicing Litho"
+rm -rf Litho
+${JAVA_HOME}/bin/java -jar ${JAR} bench-repos/harnesses/litho/wala.input.txt Landroid/graphics/Canvas save restore restoreToCount -- -process-dir bench-repos/harnesses/litho/build/ -process-dir bench-repos/litho/litho-core/build/intermediates/compile_library_classes/release/classes.jar -output-dir Litho ${SOOT_COMMON_OPTS}
