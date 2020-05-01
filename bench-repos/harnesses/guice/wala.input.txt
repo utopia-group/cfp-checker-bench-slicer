@@ -1,0 +1,8 @@
+Primordial,Java,stdlib,none
+Primordial,Java,jarFile,primordial.jar.model
+Primordial,Java,jarFile,bench-repos/deps/android.jar
+Application,Java,jarFile,bench-repos/guice/lib/javax.inject.jar
+Application,Java,jarFile,bench-repos/guice/core/target/guice-4.2.4-SNAPSHOT.jar
+Application,Java,binaryDir,bench-repos/harnesses/guice/build/
+Application,Java,sourceDir,bench-repos/guice/core/src
+Application,Java,sourceDir,bench-repos/harnesses/guice/
