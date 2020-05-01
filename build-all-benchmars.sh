@@ -50,3 +50,7 @@ echo "Building RxTool"
 # Litho
 echo "Building litho"
 (cd bench-repos/harnesses/litho; ./build-command.sh)
+
+# Guice
+echo "Building Guice"
+(cd bench-repos/harnesses/guice/; ./build-command.sh)
