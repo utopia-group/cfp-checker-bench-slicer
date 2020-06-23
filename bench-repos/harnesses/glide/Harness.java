@@ -26,11 +26,17 @@ public class Harness
         int height = nd$int();
 
         assume(width > 0 && height > 0);
-        
-        FixedSizeDrawable d1 = new FixedSizeDrawable(pDrawable, width, height);
-        FixedSizeDrawable d2 = new FixedSizeDrawable(d1, width, height);
-        d2.draw(c);
-        d1.draw(c);
+
+        int n = nd$int();
+        assume(n > 0);
+
+        for (int i = 0; i < n; ++i)
+        {
+            FixedSizeDrawable d1 = new FixedSizeDrawable(pDrawable, width, height);
+            FixedSizeDrawable d2 = new FixedSizeDrawable(d1, width, height);
+            d2.draw(c);
+            d1.draw(c);
+        }
     }
 
     private static class MockDrawable extends PictureDrawable
